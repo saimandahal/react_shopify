@@ -1,4 +1,8 @@
 development:
   password: shptka_92f75eba29591d51ab1657d0bbb800ea
-  theme_id: "131448209648"
+  theme_id: "131448340720" 
   store: wired-ecommerce-2.myshopify.com
+  directory: dist/
+  ignore_files:
+    - config/settings_data.json
+    - templates/*.json
