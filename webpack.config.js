@@ -1,6 +1,8 @@
+/* eslint-disable */
 const glob = require('glob');
 const path = require('path');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const webpack = require('webpack');
 const CopyPlugin = require('copy-webpack-plugin');
 const WebpackShellPluginNext = require('webpack-shell-plugin-next');
 const mode = process.env.NODE_ENV === 'development' ? 'development' : 'production';
@@ -11,20 +13,26 @@ const sass = require('node-sass');
 module.exports = {
   mode: mode,
   devtool: devtool,
-  entry: glob.sync('./src/js/bundles/**/*.js').reduce((acc, path) => {
-    const entry = path.replace(/^.*[\\\/]/, '').replace('.js','');
+  entry: glob.sync('./src/js/**/*.js', {
+    'ignore': [
+      './src/js/react/**/*',
+    ]
+  }).reduce((acc, path) => {
+    const entry = path.replace(/^.*[\\\/]/, '').replace('.js', '');
     acc[entry] = path;
     return acc;
   }, {}),
   output: {
     filename: './assets/bundle.[name].js',
     path: path.resolve(__dirname, 'dist'),
+    clean: false,
   },
   resolve: {
     alias: {
       Styles: path.resolve(__dirname, 'src/styles/'),
       Helpers: path.resolve(__dirname, 'src/styles/helpers/')
-    }
+    },
+    extensions: ['.js', '.jsx'],
   },
   plugins: [
     new MiniCssExtractPlugin({
@@ -57,21 +65,39 @@ module.exports = {
         flatten: true
       },
       {
-				from: 'src/styles/sections/**/*',
-				to: 'assets/section.[name].css',
-				flatten: true,
-				transform(content, path) {
-					const result = sass.renderSync({
-						file: path,
-					});
-					return result.css.toString();
-				},
-			}
+        from: 'src/styles/sections/**/*',
+        to: 'assets/section.[name].css',
+        flatten: true,
+        transform(content, path) {
+          const result = sass.renderSync({
+            file: path,
+          });
+          return result.css.toString();
+        },
+      }
     ])
   ],
   stats: stats,
   module: {
     rules: [
+      {
+        test: /\.(jsx|js)$/,
+        include: path.resolve(__dirname, 'src'),
+        exclude: [
+          '/node_modules/',
+        ],
+        use: {
+          loader: "babel-loader",
+          options: {
+            presets: [
+              ['@babel/preset-env', {
+                "targets": "defaults"
+              }],
+              '@babel/preset-react'
+            ]
+          }
+        }
+      },
       {
         test: /\.(sc|sa|c)ss$/,
         use: [
@@ -98,13 +124,14 @@ module.exports = {
 if (mode === 'development') {
   module.exports.plugins.push(
     new WebpackShellPluginNext({
-      onBuildStart:{
+      onBuildStart: {
         scripts: ['echo Webpack build in progress...🛠'],
-      }, 
-      onBuildEnd:{
-        scripts: ['echo Build Complete 📦','theme watch','theme open'],
+      },
+      onBuildEnd: {
+        scripts: ['echo Build Complete 📦', 'theme watch', 'theme open'],
         parallel: true
       }
     })
   )
 }
+/* eslint-enable */
